@@ -35,7 +35,7 @@ public class PrometheusConfiguration extends GlobalConfiguration {
 
     private String urlName = null;
     private String additionalPath;
-    private String defaultNamespace = "default";
+    private String defaultNamespace = "jenkins";
     private String jobAttributeName = "jenkins_job";
     private boolean useAuthenticatedEndpoint;
     private Long collectingMetricsPeriodInSeconds = null;

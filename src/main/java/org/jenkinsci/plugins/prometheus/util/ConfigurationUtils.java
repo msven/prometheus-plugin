@@ -14,7 +14,4 @@ public class ConfigurationUtils {
         return namespace;
     }
 
-    public static String getSubSystem() {
-        return "jenkins";
-    }
 }

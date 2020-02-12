@@ -11,9 +11,13 @@ import java.util.List;
 
 public class JenkinsStatusCollector extends Collector {
 
+	public static String getSubSystem() {
+        return "service";
+    }
+	
     @Override
     public List<MetricFamilySamples> collect() {
-        String subsystem = ConfigurationUtils.getSubSystem();
+        String subsystem = getSubSystem();
         String namespace = ConfigurationUtils.getNamespace();
         List<MetricFamilySamples> samples = new ArrayList<>();
 

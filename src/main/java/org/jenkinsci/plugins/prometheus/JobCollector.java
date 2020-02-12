@@ -33,6 +33,8 @@ public class JobCollector extends Collector {
     private Counter jobSuccessCount;
     private Counter jobFailedCount;
     private Gauge jobBuildResultOrdinal;
+    private Gauge jobBuildNumber;
+    private Gauge jobBuildDisplayName;
     private Gauge jobBuildResult;
     private Gauge jobStartMillis;
     private Gauge jobDuration;
@@ -41,6 +43,10 @@ public class JobCollector extends Collector {
     private Gauge jobTestsSkipped;
     private Gauge jobTestsFailing;
     private Summary stageSummary;
+    
+    public static String getSubSystem() {
+        return "builds";
+    }
 
     public JobCollector() {
     }
@@ -52,11 +58,10 @@ public class JobCollector extends Collector {
         String namespace = ConfigurationUtils.getNamespace();
         List<MetricFamilySamples> samples = new ArrayList<>();
         List<Job> jobs = new ArrayList<>();
-        String fullname = "builds";
-        String subsystem = ConfigurationUtils.getSubSystem();
+        String subsystem = getSubSystem();
         String jobAttribute = PrometheusConfiguration.get().getJobAttributeName();
-        String[] labelNameArray = {jobAttribute, "repo"};
-        String[] labelStageNameArray = {jobAttribute, "repo", "stage"};
+        String[] labelNameArray = {jobAttribute};
+        String[] labelStageNameArray = {jobAttribute, "stage"};
         boolean processDisabledJobs = PrometheusConfiguration.get().isProcessingDisabledBuilds();
         boolean ignoreBuildMetrics =
                 !PrometheusConfiguration.get().isCountAbortedBuilds() &&
@@ -72,77 +77,91 @@ public class JobCollector extends Collector {
         logger.debug("getting summary of build times in milliseconds by Job");
 
         summary = Summary.build()
-                .name(fullname + "_duration_milliseconds_summary")
+                .name("duration_milliseconds_summary")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Summary of Jenkins build times in milliseconds by Job")
                 .create();
 
         jobSuccessCount = Counter.build()
-                .name(fullname + "_success_build_count")
+                .name("success_count")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Successful build count")
                 .create();
 
         jobFailedCount = Counter.build()
-                .name(fullname + "_failed_build_count")
+                .name("failed_count")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Failed build count")
                 .create();
 
+        jobBuildNumber = Gauge.build()
+                .name("last_build_number")
+                .subsystem(subsystem).namespace(namespace)
+                .labelNames(labelNameArray)
+                .help("Last build number of a job")
+                .create();
+        
+        jobBuildDisplayName = Gauge.build()
+                .name("last_build_display_name")
+                .subsystem(subsystem).namespace(namespace)
+                .labelNames(labelNameArray)
+                .help("Last build display name of a job")
+                .create();
+        
         jobBuildResultOrdinal = Gauge.build()
-                .name(fullname + "_last_build_result_ordinal")
+                .name("last_result_ordinal")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Build status of a job.")
                 .create();
 
         jobBuildResult = Gauge.build()
-                .name(fullname + "_last_build_result")
+                .name("last_result")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Build status of a job as a boolean (0 or 1)")
                 .create();
 
         jobDuration = Gauge.build()
-                .name(fullname + "_last_build_duration_milliseconds")
+                .name( "last_duration_milliseconds")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Build times in milliseconds of last build")
                 .create();
 
         jobStartMillis = Gauge.build()
-                .name(fullname + "_last_build_start_time_milliseconds")
+                .name("last_start_time_milliseconds")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Last build start timestamp in milliseconds")
                 .create();
 
         jobScore = Gauge.build()
-                .name(fullname + "_last_build_score")
+                .name("last_score")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Build score of last build")
                 .create();
 
         jobTestsTotal = Gauge.build()
-                .name(fullname + "_last_build_tests_total")
+                .name("last_tests_total")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Number of total tests during the last build")
                 .create();
 
         jobTestsSkipped = Gauge.build()
-                .name(fullname + "_last_build_tests_skipped")
+                .name("last_tests_skipped")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Number of skipped tests during the last build")
                 .create();
 
         jobTestsFailing = Gauge.build()
-                .name(fullname + "_last_build_tests_failing")
+                .name("last_tests_failing")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelNameArray)
                 .help("Number of failing tests during the last build")
@@ -150,7 +169,7 @@ public class JobCollector extends Collector {
 
         logger.debug("getting summary of build times by Job and Stage");
 
-        stageSummary = Summary.build().name(fullname + "_stage_duration_milliseconds_summary")
+        stageSummary = Summary.build().name("stage_duration_milliseconds_summary")
                 .subsystem(subsystem).namespace(namespace)
                 .labelNames(labelStageNameArray)
                 .help("Summary of Jenkins build times by Job and Stage")
@@ -180,6 +199,8 @@ public class JobCollector extends Collector {
         addSamples(samples, jobSuccessCount.collect(), "Adding [{}] samples from counter");
         addSamples(samples, jobFailedCount.collect(), "Adding [{}] samples from counter");
         addSamples(samples, jobBuildResultOrdinal.collect(), "Adding [{}] samples from gauge");
+        addSamples(samples, jobBuildNumber.collect(), "Adding [{}] samples from gauge");
+        addSamples(samples, jobBuildDisplayName.collect(), "Adding [{}] samples from gauge");
         addSamples(samples, jobBuildResult.collect(), "Adding [{}] samples from gauge");
         addSamples(samples, jobDuration.collect(), "Adding [{}] samples from gauge");
         addSamples(samples, jobStartMillis.collect(), "Adding [{}] samples from gauge");
@@ -205,7 +226,7 @@ public class JobCollector extends Collector {
         if (repoName == null) {
             repoName = "NA";
         }
-        String[] labelValueArray = {job.getFullName(), repoName};
+        String[] labelValueArray = {job.getFullName()};
 
         Run run = job.getLastBuild();
         // Never built
@@ -232,12 +253,25 @@ public class JobCollector extends Collector {
         long millis = run.getStartTimeInMillis();
         long duration = run.getDuration();
         int score = job.getBuildHealth().getScore();
+        int number = run.getNumber();
+        String displayName = run.getDisplayName();
+        
+        Integer displayNameInt = null;
+        try {
+        	displayNameInt = Integer.parseInt(displayName);
+        }
+        catch( Exception e) {
+        	// Do nothing and let displayNameInt be null
+        	displayNameInt = 0;
+        }
 
         jobBuildResultOrdinal.labels(labelValueArray).set(ordinal);
         jobBuildResult.labels(labelValueArray).set(ordinal < 2 ? 1 : 0);
         jobStartMillis.labels(labelValueArray).set(millis);
         jobDuration.labels(labelValueArray).set(duration);
         jobScore.labels(labelValueArray).set(score);
+        jobBuildNumber.labels(labelValueArray).set(number);
+        jobBuildDisplayName.labels(labelValueArray).set(displayNameInt);
 
         if (PrometheusConfiguration.get().isFetchTestResults() && hasTestResults(run)) {
             int testsTotal = run.getAction(AbstractTestResultAction.class).getTotalCount();
@@ -295,7 +329,7 @@ public class JobCollector extends Collector {
         }
         String jobName = job.getFullName();
         String stageName = stage.getDisplayName();
-        String[] labelValueArray = {jobName, repoName, stageName};
+        String[] labelValueArray = {jobName, stageName};
 
         logger.debug("getting duration for stage[{}] in run [{}] from job [{}]", stage.getDisplayName(), run.getNumber(), job.getName());
         long duration = FlowNodes.getStageDuration(stage);
