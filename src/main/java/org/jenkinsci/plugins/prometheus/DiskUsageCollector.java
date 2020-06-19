@@ -1,6 +1,6 @@
 package org.jenkinsci.plugins.prometheus;
 
-import com.cloudbees.simplediskusage.QuickDiskUsagePlugin;
+//import com.cloudbees.simplediskusage.QuickDiskUsagePlugin;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 import jenkins.model.Jenkins;
@@ -46,7 +46,7 @@ public class DiskUsageCollector extends Collector {
     @Nonnull
     public List<MetricFamilySamples> collect() {
         List<MetricFamilySamples> samples = new ArrayList<>();
-        try {
+/*        try {
             QuickDiskUsagePlugin diskUsagePlugin = jenkins.getPlugin(QuickDiskUsagePlugin.class);
             if (diskUsagePlugin == null) {
                 logger.warn("Cannot collect disk usage data because plugin CloudBees Disk Usage Simple is not installed.");
@@ -65,7 +65,7 @@ public class DiskUsageCollector extends Collector {
             samples.addAll(jobUsageGauge.collect());
         } catch (IOException e) {
             logger.warn("Cannot get disk usage data due to an unexpected error", e);
-        }
+        }*/
         return samples;
     }
 }

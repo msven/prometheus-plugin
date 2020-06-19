@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>prometheus</artifactId>
-  <version>3.0.4-SNAPSHOT</version>
+  <version>3.0.5-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>Prometheus metrics plugin</name>
   <description>Expose Jenkins metrics in prometheus format</description>
@@ -139,11 +139,11 @@
       <artifactId>junit</artifactId>
       <version>${jenkins.junit.version}</version>
     </dependency>
-    <dependency>
+    <!-- dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>cloudbees-disk-usage-simple</artifactId>
       <version>${jenkins.diskUsage.version}</version>
-    </dependency>
+    </dependency -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
