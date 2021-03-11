@@ -124,10 +124,6 @@ public class JobCollector extends Collector {
         String subsystem = ConfigurationUtils.getSubSystem();
         String jobAttribute = PrometheusConfiguration.get().getJobAttributeName();
         String[] labelBaseNameArray = {jobAttribute, "repo"};
-        String[] labelBuildNameArray = Arrays.copyOf(labelBaseNameArray, labelBaseNameArray.length + 3);
-        labelBuildNameArray[labelBaseNameArray.length] = "number";
-        labelBuildNameArray[labelBaseNameArray.length + 1] = "parameters";
-        labelBuildNameArray[labelBaseNameArray.length + 2] = "status";
         String[] labelStageNameArray = Arrays.copyOf(labelBaseNameArray, labelBaseNameArray.length + 1);
         labelStageNameArray[labelBaseNameArray.length] = "stage";
         boolean processDisabledJobs = PrometheusConfiguration.get().isProcessingDisabledBuilds();
@@ -170,8 +166,8 @@ public class JobCollector extends Collector {
                 .help("Health score of a job")
                 .create();
 
-        lastBuildMetrics.BuildCollectors(fullname, subsystem, namespace, labelBuildNameArray, labelStageNameArray);
-        buildsSummaryMetrics.BuildCollectors(fullname, subsystem, namespace, labelBuildNameArray, labelStageNameArray);
+        lastBuildMetrics.BuildCollectors(fullname, subsystem, namespace, labelBaseNameArray, labelStageNameArray);
+        buildsSummaryMetrics.BuildCollectors(fullname, subsystem, namespace, labelBaseNameArray, labelStageNameArray);
 
         Jobs.forEachJob(job -> {
             if (!job.isBuildable() && processDisabledJobs) {
@@ -246,15 +242,12 @@ public class JobCollector extends Collector {
         Run lastCompletedBuild = job.getLastCompletedBuild();
         Result runResult;
         if (lastCompletedBuild != null) {
-            String resultString = "UNDEFINED";
             runResult = lastCompletedBuild.getResult();
             if (null != runResult) {
                 ordinal = runResult.ordinal;
-                resultString = runResult.toString();
             }
 
-            String params = Runs.getBuildParameters(lastCompletedBuild).entrySet().stream().map(e -> "" + e.getKey() + "=" + String.valueOf(e.getValue())).collect(Collectors.joining(";"));
-            String[] BuildLabelValueArray = {job.getFullName(), repoName, String.valueOf(run.getNumber()), params, lastCompletedBuild.isBuilding() ? "RUNNING" : resultString};
+            String[] BuildLabelValueArray = {job.getFullName(), repoName };
             ordinal = processRun(job, lastCompletedBuild, ordinal, BuildLabelValueArray, lastBuildMetrics);
         }
 
@@ -262,13 +255,8 @@ public class JobCollector extends Collector {
             logger.debug("getting metrics for run [{}] from job [{}]", run.getNumber(), job.getName());
             if (Runs.includeBuildInMetrics(run)) {
                 logger.debug("getting build info for run [{}] from job [{}]", run.getNumber(), job.getName());
-                String params = Runs.getBuildParameters(run).entrySet().stream().map(e -> "" + e.getKey() + "=" + String.valueOf(e.getValue())).collect(Collectors.joining(";"));
-                String resultString = "UNDEFINED";
-                runResult = run.getResult();
-                if (runResult != null) {
-                    resultString = runResult.toString();
-                }
-                String[] BuildLabelValueArray = {job.getFullName(), repoName, String.valueOf(run.getNumber()), params, run.isBuilding() ? "RUNNING" : resultString};
+
+                String[] BuildLabelValueArray = {job.getFullName(), repoName};
                 duration = run.getDuration();
                 if (!run.isBuilding()) {
                     summary.labels(labelValueArray).observe(duration);
